@@ -48,7 +48,7 @@ data:extend({
         name = gprefix .. "dark-matter",
         localised_name = {"item-name.dmrsa-dark-matter"},
         localised_description = {"item-description.dmrsa-dark-matter"},
-        flags = {"hidden"},
+        hidden = true,
         icons = {
             {
                 icon = "__dark-matter-replicators-space-age__/graphics/icons/tenemut.png",
