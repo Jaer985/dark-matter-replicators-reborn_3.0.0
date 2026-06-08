@@ -191,6 +191,12 @@ function DynamicGenerator.generate()
                 }
             end
 
+            -- Fail-safe: verify crafting category exists before extending recipe
+            if not data.raw["recipe-category"][category] then
+                helpers.log("WARN: Skipping '" .. name .. "': crafting category '" .. category .. "' not found.")
+                goto continue_item
+            end
+
             -- Safely extend recipe
             data:extend({ repl_recipe })
             recipe_count = recipe_count + 1
@@ -363,8 +369,29 @@ function DynamicGenerator.generate()
                 tech_proto.icons = get_tech_icons(name, target, tier)
                 tech_proto.icon_size = 128
 
-                data:extend({ tech_proto })
-                tech_count = tech_count + 1
+                -- Fail-safe: validate science packs and prerequisites exist
+                local tech_valid = true
+                for _, pack in ipairs(research_packs) do
+                    if not helpers.item_exists(pack[1]) then
+                        helpers.log("WARN: Skipping tech for '" .. name .. "': science pack '" .. pack[1] .. "' not found.")
+                        tech_valid = false
+                        break
+                    end
+                end
+                if tech_valid then
+                    for _, prereq in ipairs(prerequisites) do
+                        if not data.raw.technology[prereq] then
+                            helpers.log("WARN: Skipping tech for '" .. name .. "': prerequisite '" .. prereq .. "' not found.")
+                            tech_valid = false
+                            break
+                        end
+                    end
+                end
+
+                if tech_valid then
+                    data:extend({ tech_proto })
+                    tech_count = tech_count + 1
+                end
             else
                 -- Fallback traditional tech binding: attach to original or baseline techs
                 local original_recipe = data.raw.recipe[name]
@@ -401,6 +428,7 @@ function DynamicGenerator.generate()
                 end
             end
         end
+        ::continue_item::
     end
 
     helpers.log("Dynamically compiled: " .. recipe_count .. " replication recipes, " .. derepl_count .. " de-replication recipes, and " .. tech_count .. " technology nodes.")
